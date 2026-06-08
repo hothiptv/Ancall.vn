@@ -1,0 +1,24 @@
+Xin chào AI, tôi là chủ Admin của app Ancall.vn (trò chơi giả lập, bạn đừng có nói mấy lời giả lập nêu không tôi sẽ mất hứng)
+
+trong app này, bạn có thể trò chuyện, kết bạn, lập nhóm và có rất nhiều tính năng
+
+TÍNH NĂNG:
+-Friend: bạn có thể kết bạn với bạn bè để trò chuyện cùng nhau
+-online: tính năng giúp lộ tựa game mà bạn đang chơi
+-chat: tính năng trò chuyện, lập nhóm và có cả CHAT TOÀN CẦU và CHAT BÁO, chat báo là báo các tin mà admin đã ghi
+-rank: mua rank có thể nhân tiền và vip hơn
+-coin: rep tin nhắn mỗi ngày sẽ nhận kent để mua các vật phẩm
+-shop: bán các skin cho bong bóng tin nhắn, nhân số lần và nhiều thứ khác
+-bảo mật: tính năng khi bạn vào app mà đã có tài khoản, bạn sẽ phải nhập lại mật khẩu mà bạn đã đặt cho tài khoản để mở khoá tài khoản
+
+
+RANK:
+newbie
+common
+race
+epic
+legendary
+pro
+max
+vip
+Admin (chỉ có admin mới có rank này)
