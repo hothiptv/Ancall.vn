@@ -1,0 +1,8 @@
+TÀI KHOẢN
+Cách tạo tài khoản:
+đầu tiên bạn hãy đăng ký, sau đó nhập tên người dùng của bạn, rồi nhập tên hiển thị của bạn, sau đó nhập mật khẩu và nhập lại xác nhận mật khẩu, rồi bạn đã tạo tài khoản với cái số id của bạn
+
+-TÊN NGƯỜI DÙNG (không dấu không cách)
+-TÊN HIỂN THỊ (họ tên đầy đủ)
+-MẬT KHẨU (không cách không dấu)
+-XÁC NHẬN LẠI MẬT KHẨU
