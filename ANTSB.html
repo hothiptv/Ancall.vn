@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antsb Game - Realtime Dashboard</title>
+    <style>
+        :root {
+            --primary-blue: #0072ff;
+            --light-blue: #00c6ff;
+            --dark-bg: #050b1a;
+            --card-bg: rgba(28, 37, 65, 0.85);
+            --text-color: #f4f5f7;
+            --neon-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            padding-bottom: 50px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ----- UI LOADING SCREEN THỜI THƯỢNG ----- */
+        #loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(0, 198, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--light-blue);
+            box-shadow: var(--neon-shadow);
+            animation: spin 1s linear infinite;
+        }
+
+        .loader-text {
+            margin-top: 20px;
+            color: var(--light-blue);
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            text-shadow: var(--neon-shadow);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ----- NỀN CHẠY LẤP LÁNH (SPARKLING BACKGROUND) ----- */
+        #canvas-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* BANNER CHUẨN KÍCH THƯỚC YOUTUBE DESKTOP (TỶ LỆ 16:2.6) */
+        .banner-container {
+            width: 100%;
+            aspect-ratio: 16 / 2.6; 
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 114, 255, 0.2);
+            border: 1px solid rgba(0, 198, 255, 0.3);
+            background-color: #000;
+        }
+
+        .banner-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .header-profile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: -50px;
+            padding: 0 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .profile-left {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #1c2541;
+            background-color: #1c2541;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            object-fit: cover;
+        }
+
+        .avatar:hover {
+            transform: scale(1.05);
+            border-color: var(--light-blue);
+            box-shadow: var(--neon-shadow);
+        }
+
+        .channel-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0, 114, 255, 0.6);
+        }
+
+        /* KHUNG CHỜ TƯƠNG TÁC PHÁT SÁNG */
+        .profile-right {
+            display: flex;
+            gap: 15px;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 198, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .profile-right:hover {
+            border-color: var(--light-blue);
+            box-shadow: var(--neon-shadow);
+            transform: translateY(-2px);
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .stat-box:not(:last-child) {
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-num {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--light-blue);
+            text-shadow: 0 0 5px rgba(0, 198, 255, 0.2);
+        }
+
+        /* HIỆU ỨNG NHẢY SỐ (CHỈ KHI CÓ ĐỔI SỐ THẬT TRÊN YOUTUBE) */
+        .counter-animate {
+            animation: pulseNumber 0.5s ease-in-out;
+        }
+
+        @keyframes pulseNumber {
+            0% { transform: scale(1); color: #fff; }
+            50% { transform: scale(1.25); color: #00ffcc; text-shadow: 0 0 15px #00ffcc; }
+            100% { transform: scale(1); color: var(--light-blue); }
+        }
+
+        .about-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card:hover {
+            border-color: var(--primary-blue);
+            box-shadow: var(--neon-shadow);
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            color: var(--light-blue);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .about-left p {
+            color: #cbd5e0;
+            line-height: 1.6;
+        }
+
+        .about-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .date-highlight {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 8px;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn-visit {
+            display: inline-block;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            background: linear-gradient(90deg, var(--primary-blue), var(--light-blue));
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4);
+            cursor: pointer;
+        }
+
+        .btn-visit:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 198, 255, 0.8);
+        }
+
+        /* TRÌNH PHÁT VIDEO TRỰC TIẾP TRÊN WEB */
+        .player-container {
+            display: none;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            border: 2px solid var(--light-blue);
+            box-shadow: var(--neon-shadow);
+            position: relative;
+            padding-top: 56.25%;
+        }
+
+        .player-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            margin: 35px 0 15px 0;
+            border-left: 4px solid var(--primary-blue);
+            padding-left: 12px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 114, 255, 0.4);
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .short-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--light-blue);
+            box-shadow: var(--neon-shadow);
+        }
+
+        .thumb-wrap {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #000;
+        }
+
+        .short-wrap {
+            padding-top: 177.77%; 
+        }
+
+        .thumb-wrap img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumb-wrap::after {
+            content: '▶';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            font-size: 2rem;
+            color: #fff;
+            opacity: 0;
+            background: rgba(0, 114, 255, 0.85);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--neon-shadow);
+        }
+
+        .video-card:hover .thumb-wrap::after {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .video-info {
+            padding: 15px;
+        }
+
+        .video-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 40px;
+            color: #fff;
+        }
+
+        .video-stats {
+            font-size: 0.8rem;
+            color: #a0aec0;
+        }
+
+        @media (max-width: 768px) {
+            .header-profile { flex-direction: column; align-items: center; text-align: center; }
+            .profile-left { flex-direction: column; align-items: center; }
+            .about-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader-wrapper">
+        <div class="loader"></div>
+        <div class="loader-text">DỮ LIỆU ĐANG TẢI...</div>
+    </div>
+
+    <canvas id="canvas-particles"></canvas>
+
+    <div class="container">
+        <div class="banner-container">
+            <img id="channel-banner" src="" alt="Banner">
+        </div>
+
+        <div class="header-profile">
+            <div class="profile-left">
+                <img id="channel-avatar" class="avatar" src="" alt="Logo">
+                <div>
+                    <div id="channel-name" class="channel-title">Connecting API...</div>
+                </div>
+            </div>
+
+            <div class="profile-right">
+                <div class="stat-box">
+                    <div id="sub-count" class="stat-num">--</div>
+                    <div class="stat-label">Đăng ký</div>
+                </div>
+                <div class="stat-box">
+                    <div id="total-views" class="stat-num">--</div>
+                    <div class="stat-label">Tổng lượt xem</div>
+                </div>
+                <div class="stat-box">
+                    <div id="total-likes" class="stat-num">--</div>
+                    <div class="stat-label">Ước tính Like</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="live-player-wrapper" class="player-container">
+            <iframe id="live-player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+
+        <div class="about-section">
+            <div class="card about-left">
+                <h3>Mô tả kênh</h3>
+                <p id="channel-desc">Đang nạp dữ liệu...</p>
+            </div>
+            <div class="card about-right">
+                <h3>Ngày tạo kênh</h3>
+                <div id="channel-date" class="date-highlight">--/--/----</div>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <a href="https://youtube.com/@antsbgame14" target="_blank" class="btn-visit">TRUY CẬP KÊNH HỆ THỐNG</a>
+        </div>
+
+        <div class="section-title">3 Video Mới Nhất</div>
+        <div id="new-videos" class="video-grid"></div>
+
+        <div class="section-title">3 Video Hot Nhất</div>
+        <div id="hot-videos" class="video-grid"></div>
+
+        <div class="section-title">3 Video Shorts Hot Nhất</div>
+        <div id="hot-shorts" class="short-grid"></div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyDokXWPc2F2bqMEwWyTMITbHViBhqQuOfs';
+        const CHANNEL_HANDLE = '@antsbgame14';
+
+        async function initDashboard() {
+            try {
+                const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${CHANNEL_HANDLE}&key=${API_KEY}`;
+                const searchRes = await fetch(searchUrl);
+                const searchData = await searchRes.json();
+                const channelId = searchData.items[0].id.channelId;
+
+                // Tải dữ liệu kênh lần đầu
+                await refreshChannelStats(channelId, false);
+
+                // TẮT MÀN HÌNH LOADING SAU KHI DỮ LIỆU ĐẦU TIÊN ĐÃ SẴN SÀNG
+                document.getElementById('loader-wrapper').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loader-wrapper').style.display = 'none';
+                }, 300);
+
+                // HỆ THỐNG KIỂM TRA LẶP REALTIME (Cứ 10 giây quét API một lần để check số thật)
+                setInterval(() => {
+                    refreshChannelStats(channelId, true);
+                }, 1000);
+
+                loadVideos(channelId, 'date', 'new-videos', 3, false);
+                loadVideos(channelId, 'viewCount', 'hot-videos', 3, false);
+                loadVideos(channelId, 'viewCount', 'hot-shorts', 3, true);
+
+            } catch (error) {
+                console.error("Lỗi đồng bộ API:", error);
+            }
+        }
+
+        async function refreshChannelStats(channelId, isUpdate) {
+            try {
+                const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${API_KEY}`;
+                const channelRes = await fetch(channelUrl);
+                const channelData = await channelRes.json();
+                const channel = channelData.items[0];
+
+                const newSubs = parseInt(channel.statistics.subscriberCount);
+                const newViews = parseInt(channel.statistics.viewCount);
+                const estimatedLikes = Math.floor(newViews * 0.075); // Tính toán tỷ lệ like chuẩn logic
+
+                // CHỈ PHÁT HIỆU ỨNG NẢY SỐ KHI DỮ LIỆU THẬT TRÊN YOUTUBE THAY ĐỔI
+                updateStatElement('sub-count', newSubs, isUpdate);
+                updateStatElement('total-views', newViews, isUpdate);
+                updateStatElement('total-likes', estimatedLikes, isUpdate);
+
+                if (!isUpdate) {
+                    document.getElementById('channel-avatar').src = channel.snippet.thumbnails.high.url;
+                    document.getElementById('channel-name').innerText = channel.snippet.title;
+                    document.getElementById('channel-desc').innerText = channel.snippet.description || "Kênh không có mô tả cấu hình.";
+                    const publishDate = new Date(channel.snippet.publishedAt);
+                    document.getElementById('channel-date').innerText = publishDate.toLocaleDateString('vi-VN');
+                    
+                    if(channel.brandingSettings.image && channel.brandingSettings.image.bannerExternalUrl) {
+                        document.getElementById('channel-banner').src = channel.brandingSettings.image.bannerExternalUrl;
+                    }
+                }
+            } catch (err) {
+                console.log("Đang chờ quét vòng lặp tiếp theo...");
+            }
+        }
+
+        function updateStatElement(id, value, animate) {
+            const el = document.getElementById(id);
+            const formatted = value.toLocaleString('vi-VN');
+            if (el.innerText !== formatted) {
+                const isFirstLoad = (el.innerText === '--');
+                el.innerText = formatted;
+                
+                // Chỉ kích hoạt hiệu ứng nảy sáng khi không phải lần load đầu và giá trị thực sự biến động
+                if (animate && !isFirstLoad) {
+                    el.classList.add('counter-animate');
+                    setTimeout(() => el.classList.remove('counter-animate'), 500);
+                }
+            }
+        }
+
+        async function loadVideos(channelId, orderType, containerId, maxResults, isShort) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            let queryParam = isShort ? '&q=shorts' : '';
+            const videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=${maxResults}&order=${orderType}&type=video${queryParam}&key=${API_KEY}`;
+            
+            try {
+                const res = await fetch(videoSearchUrl);
+                const data = await res.json();
+
+                for(const item of data.items) {
+                    const videoId = item.id.videoId;
+                    const title = item.snippet.title;
+                    const thumb = isShort ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.medium.url;
+
+                    const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}&key=${API_KEY}`;
+                    const statsRes = await fetch(statsUrl);
+                    const statsData = await statsRes.json();
+                    
+                    let views = "0";
+                    let likes = "0";
+                    if(statsData.items && statsData.items[0]) {
+                        const stats = statsData.items[0].statistics;
+                        views = Number(stats.viewCount || 0).toLocaleString('vi-VN');
+                        likes = Number(stats.likeCount || 0).toLocaleString('vi-VN');
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    card.innerHTML = `
+                        <div class="thumb-wrap ${isShort ? 'short-wrap' : ''}">
+                            <img src="${thumb}" alt="thumbnail">
+                        </div>
+                        <div class="video-info">
+                            <div class="video-title">${title}</div>
+                            <div class="video-stats">
+                                👁️ ${views} &nbsp;&nbsp; 👍 ${likes}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Cơ chế bấm vào tự nhảy khung phát video mượt mà
+                    card.addEventListener('click', () => {
+                        const playerWrapper = document.getElementById('live-player-wrapper');
+                        const iframe = document.getElementById('live-player');
+                        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                        playerWrapper.style.display = 'block';
+                        playerWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                    
+                    container.appendChild(card);
+                }
+            } catch (err) {
+                container.innerHTML = '<p>Lỗi luồng tải video.</p>';
+            }
+        }
+
+        // ----- HỆ THỐNG XỬ LÝ NỀN LẤP LÁNH (CANVAS PARTICLES) -----
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = Math.random() * -0.3 - 0.1; // Bay nhẹ lên trên
+                this.alpha = Math.random();
+                this.fadeSpeed = Math.random() * 0.01 + 0.005;
+            }
+            update() {
+                this.y += this.speedY;
+                this.alpha -= this.fadeSpeed;
+                if (this.y < 0 || this.alpha <= 0) {
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height;
+                    this.alpha = 1;
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(0, 198, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 60; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
