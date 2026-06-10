@@ -22,3 +22,6 @@ pro
 max
 vip
 Admin (chỉ có admin mới có rank này)
+
+
+sau khi bạn đọc xong hãy đọc file tiếp theo
